@@ -1,72 +1,87 @@
  public static class ObjectDumyDataExtensions
     {
-        static Random _rnd = new Random();
+          static Random _rnd = new Random();
+        static ConcurrentDictionary<string, int> _maped = new ConcurrentDictionary<string, int>();
 
-        static int _deep = 0;
+        static Type _currentInstanceType;
 
         public static T GenerateData<T>() where T : class, new()
         {
-            _deep = 0;
             var instanceType = typeof(T);
             var instance = new T();
 
+            _maped.Clear();
+
+            _currentInstanceType = instanceType;
+
             var instanceProperties = instanceType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
 
             foreach (var pi in instanceProperties)
             {
-                try
-                {
-                    if (IsIgnore(pi)) continue;
+                if (IsIgnoreAttribute(pi)) continue;
 
-                    var val = BuildDumyDataForProp(pi.PropertyType);
-                    if (pi.GetSetMethod() != null)
-                    {
-                        pi.SetValue(instance, val);
-                    }
-                }
-                catch (Exception ex)
+                var val = BuildDumyDataForProp(pi.PropertyType, instance);
+
+                if (pi.GetSetMethod() != null)
                 {
+                    pi.SetValue(instance, val);
                 }
             }
 
             return instance;
         }
 
-        static object BuildInstance(Type instanceType)
+        static object BuildInstance(Type instanceType, object objOrigin)
         {
             var instance = Activator.CreateInstance(instanceType);
+            var key = objOrigin.GetType() + "__" + instanceType;
+
+            if (_maped.ContainsKey(key))
+            {
+                if (_maped[key] > 0)
+                {
+                    return null;
+                }
+
+                _maped[key] = _maped[key] + 1;
+            }
+            else
+            {
+                _maped[key] = 0;
+            }
 
             var instanceProperties = instanceType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
 
             foreach (var pi in instanceProperties)
             {
-                try
-                {
-                    if (IsIgnore(pi)) continue;
+                if (IsIgnoreAttribute(pi)) continue;
 
-                    var val = BuildDumyDataForProp(pi.PropertyType);
-                    if (pi.GetSetMethod() != null)
-                    {
-                        pi.SetValue(instance, val);
-                    }
-                }
-                catch (Exception ex)
+                var val = BuildDumyDataForProp(pi.PropertyType, instance);
+
+                if (pi.GetSetMethod() != null)
                 {
+                    pi.SetValue(instance, val);
                 }
             }
 
             return instance;
         }
 
-        static bool IsIgnore(PropertyInfo pi)
+        static bool IsIgnoreAttribute(PropertyInfo pi)
         {
             var piType = pi.PropertyType;
 
             object[] attrs = pi.GetCustomAttributes(true);
             foreach (object attr in attrs)
             {
-                Newtonsoft.Json.JsonIgnoreAttribute authAttr = attr as Newtonsoft.Json.JsonIgnoreAttribute;
-                if (authAttr != null)
+                Newtonsoft.Json.JsonIgnoreAttribute jsonIgnoreAttr = attr as Newtonsoft.Json.JsonIgnoreAttribute;
+                if (jsonIgnoreAttr != null)
+                {
+                    return true;
+                }
+
+                System.Xml.Serialization.XmlIgnoreAttribute xmlIgnore = attr as System.Xml.Serialization.XmlIgnoreAttribute;
+                if (xmlIgnore != null)
                 {
                     return true;
                 }
@@ -75,9 +90,9 @@
             return false;
         }
 
-        private static object BuildDumyDataForProp(Type piType)
+        private static object BuildDumyDataForProp(Type piType, object objOrigin)
         {
-            if (piType.IsAbstract || piType.IsInterface)
+            if (piType == null || piType.IsAbstract || piType.IsInterface)
             {
                 return null;
             }
@@ -105,7 +120,7 @@
             }
             if (piType == typeof(Int32) || piType == typeof(Int32?))
             {
-                return (Int32)_rnd.Next(1, 128);
+                return _rnd.Next(1, 128);
             }
             if (piType == typeof(Int64) || piType == typeof(Int64?))
             {
@@ -140,23 +155,38 @@
 
             if (piType.IsArray)
             {
-                ArrayList items = new ArrayList();
+                ArrayList arr = new ArrayList();
                 var elementType = piType.GetElementType();
-                var item = BuildDumyDataForProp(elementType);
-                items.Add(item);
 
-                return items.ToArray(elementType);
+                var item = BuildDumyDataForProp(elementType, objOrigin);
+                arr.Add(item);
+
+                return arr.ToArray(elementType);
             }
+
+            if (typeof(IEnumerable).IsAssignableFrom(piType))
+            {
+                var elementType = piType.GenericTypeArguments[0];
+                 
+                if (typeof(IList).IsAssignableFrom(piType))
+                {
+                    var list = (IList)Activator.CreateInstance(piType);
+                    list.Add(Activator.CreateInstance(elementType));
+                    return list;
+                }
+            }          
 
             if (piType.IsClass)
             {
-                //  if (_deep > 3000) return null;
-                _deep++;
-                var proInstance = BuildInstance(piType);
-
+                var proInstance = BuildInstance(piType, objOrigin);
                 return proInstance;
             }
 
             return null;
+        }
+
+        static IEnumerable GenerateItem(Type elementType)
+        {
+            yield return Activator.CreateInstance(elementType);
         }
     }
