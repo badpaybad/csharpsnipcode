@@ -241,7 +241,7 @@ public class MemoryMessageBuss
                  Console.WriteLine("channel1 subscriber1: " + id);
              });
 
-       MemoryMessageBuss.Instance.Publish<string>("channeltest1", "Temp1: " + counter);
+       MemoryMessageBuss.Instance.Publish<string>("channel1", "Temp1: " + counter);
 
     //------
 
