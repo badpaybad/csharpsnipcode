@@ -203,11 +203,17 @@ public class MemoryMessageBuss
         var data = Pop(stackName);
         return data == null ? default(T) : (T)data;
     }
-
+   
     public void Publish<T>(string channelName, T data)
     {
         _channelTypeIsQueue[channelName] = true;
         Enqueue(channelName, data);
+    }
+
+    public void PublishUseStack<T>(string channelName, T data)
+    {
+        _channelTypeIsQueue[channelName] = false;
+        Push(channelName, data);
     }
 
     public void Subscribe<T>(string channelName, string subscribeName, Action<T> callback)
@@ -224,13 +230,6 @@ public class MemoryMessageBuss
             else callback((T)o);
         };
     }
-
-    public void PublishUseStack<T>(string stackName, T data)
-    {
-        _channelTypeIsQueue[stackName] = false;
-        Push(stackName, data);
-    }
-
 }
 
 
