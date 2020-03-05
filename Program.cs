@@ -8,9 +8,9 @@ namespace csharpsnipcode
         static void Main(string[] args)
         {
             MemoryMessageBuss.Instance.Subscribe<string>("channel1", "subscriber1", (id) =>
-          {
-              Console.WriteLine("channel1 subscriber1: " + id);
-          });
+            {
+                Console.WriteLine("channel1 subscriber1: " + id);
+            });
 
             new Thread(() =>
                       {
@@ -23,6 +23,11 @@ namespace csharpsnipcode
                               Thread.Sleep(1000);
                           }
                       }).Start();
+
+            MemoryMessageBuss.Instance.Subscribe<string>("channel1", "subscriber2", (id) =>
+                      {
+                          Console.WriteLine("channel1 subscriber2: " + id);
+                      });
 
             //------
 
@@ -54,14 +59,19 @@ namespace csharpsnipcode
 
                     counter++;
                     Thread.Sleep(1000);
+
+                    
                 }
 
             }).Start();
 
             //------
 
-
-
+            new Thread(()=>{
+                Thread.Sleep(5000);
+                Console.WriteLine("Un subscribe channel1 by subscriber2");
+                MemoryMessageBuss.Instance.Unsubscribe("channel1", "subscriber2");
+            }).Start();
 
             Console.ReadLine();
 
