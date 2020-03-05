@@ -19,17 +19,14 @@ namespace csharpsnipcode
             }
         }
 
-        ConcurrentDictionary<string, ConcurrentQueue<object>>
-             _queue = new ConcurrentDictionary<string, ConcurrentQueue<object>>();
+        ConcurrentDictionary<string, ConcurrentQueue<object>> _queue = new ConcurrentDictionary<string, ConcurrentQueue<object>>();
 
-        ConcurrentDictionary<string, ConcurrentStack<object>>
-            _stack = new ConcurrentDictionary<string, ConcurrentStack<object>>();
+        ConcurrentDictionary<string, ConcurrentStack<object>> _stack = new ConcurrentDictionary<string, ConcurrentStack<object>>();
 
-        ConcurrentDictionary<string, object>
-            _cache = new ConcurrentDictionary<string, object>();
+        ConcurrentDictionary<string, object> _cache = new ConcurrentDictionary<string, object>();
 
-        ConcurrentDictionary<string, ConcurrentDictionary<string, Action<object>>>
-            _channelSubscriber = new ConcurrentDictionary<string, ConcurrentDictionary<string, Action<object>>>();
+        ConcurrentDictionary<string, ConcurrentDictionary<string, Action<object>>> _channelSubscriber
+        = new ConcurrentDictionary<string, ConcurrentDictionary<string, Action<object>>>();
         ConcurrentDictionary<string, bool> _channelTypeIsQueue = new ConcurrentDictionary<string, bool>();
         ConcurrentDictionary<string, DateTime?> _keyExpire = new ConcurrentDictionary<string, DateTime?>();
 
@@ -99,7 +96,7 @@ namespace csharpsnipcode
 
                                 _stack.TryRemove(item.Key, out ConcurrentStack<object> stackVal);
 
-                                var channelName= item.Key;
+                                var channelName = item.Key;
                                 _channelSubscriber.TryRemove(channelName, out ConcurrentDictionary<string, Action<object>> oldChannelVal);
 
                                 _channelTypeIsQueue.TryRemove(channelName, out bool oldTypeVal);
@@ -156,7 +153,7 @@ namespace csharpsnipcode
 
             queueData.Enqueue(data);
 
-            SetExpire(queueName,expireAt);
+            SetExpire(queueName, expireAt);
         }
 
         public object Dequeue(string queueName)
@@ -188,7 +185,7 @@ namespace csharpsnipcode
 
             stackData.Push(data);
 
-            SetExpire(stackName,expireAt);
+            SetExpire(stackName, expireAt);
         }
         object Pop(string stackName)
         {
@@ -217,7 +214,7 @@ namespace csharpsnipcode
         {
             channelName = ScopedChannelName(channelName);
             _channelTypeIsQueue[channelName] = true;
-            Enqueue(channelName, data,expireAt);
+            Enqueue(channelName, data, expireAt);
         }
 
         public void PublishUseStack<T>(string channelName, T data, DateTime? expireAt = null)
@@ -241,6 +238,17 @@ namespace csharpsnipcode
                 if (o == null) onMessage(default(T));
                 else onMessage((T)o);
             };
+        }
+
+        public void Unsubscribe(string channelName, string subscribeName)
+        {
+            channelName = ScopedChannelName(channelName);
+            if (!_channelSubscriber.TryGetValue(channelName, out ConcurrentDictionary<string, Action<object>> subscribers))
+            {
+                subscribers = new ConcurrentDictionary<string, Action<object>>();
+            }
+
+            subscribers.TryRemove(subscribeName, out Action<object> oldVal);
         }
     }
 
