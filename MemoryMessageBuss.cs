@@ -31,7 +31,6 @@ namespace csharpsnipcode
         ConcurrentDictionary<string, ConcurrentDictionary<string, Action<object>>>
             _channelSubscriber = new ConcurrentDictionary<string, ConcurrentDictionary<string, Action<object>>>();
         ConcurrentDictionary<string, bool> _channelTypeIsQueue = new ConcurrentDictionary<string, bool>();
-
         ConcurrentDictionary<string, DateTime?> _keyExpire = new ConcurrentDictionary<string, DateTime?>();
 
         Thread _channelThread;
@@ -100,11 +99,12 @@ namespace csharpsnipcode
 
                                 _stack.TryRemove(item.Key, out ConcurrentStack<object> stackVal);
 
-                                _channelSubscriber.TryRemove(item.Key, out ConcurrentDictionary<string, Action<object>> oldChannelVal);
+                                var channelName= item.Key;
+                                _channelSubscriber.TryRemove(channelName, out ConcurrentDictionary<string, Action<object>> oldChannelVal);
 
-                                _channelTypeIsQueue.TryRemove(item.Key, out bool oldTypeVal);
+                                _channelTypeIsQueue.TryRemove(channelName, out bool oldTypeVal);
 
-                                _keyExpire.TryRemove(item.Key, out DateTime? oldExpired);
+                                _keyExpire.TryRemove(channelName, out DateTime? oldExpired);
                             }
 
                         });
@@ -126,7 +126,6 @@ namespace csharpsnipcode
         public void Set<T>(string key, T data, DateTime? expireAt = null)
         {
             _cache[key] = data;
-
             SetExpire(key, expireAt);
         }
 
@@ -147,7 +146,7 @@ namespace csharpsnipcode
             }
         }
 
-        public void Enqueue<T>(string queueName, T data)
+        public void Enqueue<T>(string queueName, T data, DateTime? expireAt = null)
         {
             if (!_queue.TryGetValue(queueName, out ConcurrentQueue<object> queueData))
             {
@@ -156,6 +155,8 @@ namespace csharpsnipcode
             }
 
             queueData.Enqueue(data);
+
+            SetExpire(queueName,expireAt);
         }
 
         public object Dequeue(string queueName)
@@ -177,7 +178,7 @@ namespace csharpsnipcode
             return data == null ? default(T) : (T)data;
         }
 
-        public void Push<T>(string stackName, T data)
+        public void Push<T>(string stackName, T data, DateTime? expireAt = null)
         {
             if (!_stack.TryGetValue(stackName, out ConcurrentStack<object> stackData))
             {
@@ -186,6 +187,8 @@ namespace csharpsnipcode
             }
 
             stackData.Push(data);
+
+            SetExpire(stackName,expireAt);
         }
         object Pop(string stackName)
         {
@@ -205,20 +208,28 @@ namespace csharpsnipcode
             return data == null ? default(T) : (T)data;
         }
 
-        public void Publish<T>(string channelName, T data)
+        string ScopedChannelName(string channelName)
         {
+            return $"Channel:{channelName}";
+        }
+
+        public void Publish<T>(string channelName, T data, DateTime? expireAt = null)
+        {
+            channelName = ScopedChannelName(channelName);
             _channelTypeIsQueue[channelName] = true;
-            Enqueue(channelName, data);
+            Enqueue(channelName, data,expireAt);
         }
 
-        public void PublishUseStack<T>(string channelName, T data)
+        public void PublishUseStack<T>(string channelName, T data, DateTime? expireAt = null)
         {
+            channelName = ScopedChannelName(channelName);
             _channelTypeIsQueue[channelName] = false;
-            Push(channelName, data);
+            Push(channelName, data, expireAt);
         }
 
-        public void Subscribe<T>(string channelName, string subscribeName, Action<T> callback)
+        public void Subscribe<T>(string channelName, string subscribeName, Action<T> onMessage)
         {
+            channelName = ScopedChannelName(channelName);
             if (!_channelSubscriber.TryGetValue(channelName, out ConcurrentDictionary<string, Action<object>> subscribers))
             {
                 subscribers = new ConcurrentDictionary<string, Action<object>>();
@@ -227,8 +238,8 @@ namespace csharpsnipcode
 
             subscribers[subscribeName] = (o) =>
             {
-                if (o == null) callback(default(T));
-                else callback((T)o);
+                if (o == null) onMessage(default(T));
+                else onMessage((T)o);
             };
         }
     }
