@@ -130,13 +130,7 @@ namespace csharpsnipcode
             if (_keySlideExpire.ContainsKey(key))
             {
                 var slideInterval = _keySlideExpire[key].Value;
-                if (slideInterval != null)
-                {
-                    var expireAt = DateTime.Now.Add(slideInterval.Value);
-                    SetExpire(key, expireAt);
-
-                    _keySlideExpire[key] = new KeyValuePair<DateTime, TimeSpan?>(expireAt, slideInterval);
-                }
+                SetExpire(key, slideInterval);
             }
             return _cache.TryGetValue(key, out object val) && val != null ? (T)val : default(T);
         }
