@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Runtime.Serialization.Json;
+using System.Threading;
 using System;
 
 namespace csharpsnipcode
@@ -97,6 +98,11 @@ namespace csharpsnipcode
                 Thread.Sleep(10000);
                 Console.WriteLine("Clear all");
                 MemoryMessageBuss.Instance.ClearAll();
+
+                var listKey = MemoryMessageBuss.Instance.ListAllKey();
+
+                Console.WriteLine("Count all key: " + listKey.Count);
+                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(listKey));
 
             }).Start();
 
