@@ -59,8 +59,6 @@ namespace csharpsnipcode
 
                     counter++;
                     Thread.Sleep(1000);
-
-
                 }
 
             }).Start();
@@ -91,6 +89,15 @@ namespace csharpsnipcode
                     Console.WriteLine("After 1 seconds TestSlideExpire3Seconds: " + MemoryMessageBuss.Instance.Get<string>("TestSlideExpire3Seconds"));
                     Thread.Sleep(1000);
                 }
+            }).Start();
+
+
+            new Thread(() =>
+            {
+                Thread.Sleep(10000);
+                Console.WriteLine("Clear all");
+                MemoryMessageBuss.Instance.ClearAll();
+
             }).Start();
 
             Console.ReadLine();

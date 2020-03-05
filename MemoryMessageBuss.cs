@@ -91,20 +91,10 @@ namespace csharpsnipcode
 
                             foreach (var item in listExpired)
                             {
-                                _cache.TryRemove(item.Key, out object cacheVal);
-
-                                _queue.TryRemove(item.Key, out ConcurrentQueue<object> queueVal);
-
-                                _stack.TryRemove(item.Key, out ConcurrentStack<object> stackVal);
-
-                                var channelName = item.Key;
-                                _channelSubscriber.TryRemove(channelName, out ConcurrentDictionary<string, Action<object>> oldChannelVal);
-
-                                _channelTypeIsQueue.TryRemove(channelName, out bool oldTypeVal);
-
-                                _keyExpire.TryRemove(channelName, out DateTime? oldExpired);
-
-                                _keySlideExpire.TryRemove(channelName, out KeyValuePair<DateTime, TimeSpan?> oldSlideExpired);
+                                ThreadPool.QueueUserWorkItem((o) =>
+                                {
+                                    Clear(item.Key);
+                                });
                             }
 
                         });
@@ -284,6 +274,109 @@ namespace csharpsnipcode
             }
 
             subscribers.TryRemove(subscribeName, out Action<object> oldVal);
+        }
+
+        public int CountQueue(string queueName)
+        {
+            if (_queue.ContainsKey(queueName) == false) return 0;
+            return _queue[queueName].Count;
+        }
+
+        public int CountStack(string stackName)
+        {
+            if (_stack.ContainsKey(stackName) == false) return 0;
+            return _queue[stackName].Count;
+        }
+
+        public int CountDataInChannel(string channelName)
+        {
+            channelName = ScopedChannelName(channelName);
+            return CountQueue(channelName);
+        }
+
+        public int CountDataInChannelUseStack(string channelName)
+        {
+            channelName = ScopedChannelName(channelName);
+            return CountStack(channelName);
+        }
+
+        public int CountSubscribeInChannel(string channelName)
+        {
+            if (_channelSubscriber.ContainsKey(channelName) == false) return 0;
+            return _queue[channelName].Count;
+        }
+
+        public List<string> ListSubscriberInChannel(string channelName)
+        {
+            if (_channelSubscriber.ContainsKey(channelName) == false) return new List<string>();
+
+            return _channelSubscriber[channelName].Keys.ToList();
+        }
+
+        public void Clear(string key)
+        {
+            _cache.TryRemove(key, out object cacheVal);
+
+            _queue.TryRemove(key, out ConcurrentQueue<object> queueVal);
+
+            _stack.TryRemove(key, out ConcurrentStack<object> stackVal);
+
+            var channelName = key;
+            _channelSubscriber.TryRemove(channelName, out ConcurrentDictionary<string, Action<object>> oldChannelVal);
+            _channelTypeIsQueue.TryRemove(channelName, out bool oldTypeVal);
+
+            _keyExpire.TryRemove(key, out DateTime? oldExpired);
+            _keySlideExpire.TryRemove(key, out KeyValuePair<DateTime, TimeSpan?> oldSlideExpired);
+        }
+
+        public List<string> ListAllKey()
+        {
+            List<string> keys = new List<string>();
+
+            lock (_cache)
+            {
+                keys.AddRange(_cache.Select(i => i.Key).ToList());
+            }
+            lock (_queue)
+            {
+                keys.AddRange(_cache.Select(i => i.Key).ToList());
+            }
+            lock (_stack)
+            {
+                keys.AddRange(_cache.Select(i => i.Key).ToList());
+            }
+            lock (_channelSubscriber)
+            {
+                keys.AddRange(_cache.Select(i => i.Key).ToList());
+            }
+            lock (_channelTypeIsQueue)
+            {
+                keys.AddRange(_cache.Select(i => i.Key).ToList());
+            }
+            lock (_keyExpire)
+            {
+                keys.AddRange(_cache.Select(i => i.Key).ToList());
+            }
+            lock (_keySlideExpire)
+            {
+                keys.AddRange(_cache.Select(i => i.Key).ToList());
+            }
+
+            keys = keys.Distinct().ToList();
+
+            return keys;
+        }
+
+        public void ClearAll()
+        {
+            var keys = ListAllKey();
+            ThreadPool.QueueUserWorkItem((o) =>
+               {
+                   foreach (var k in keys)
+                   {
+                       Clear(k);
+                   }
+               });
         }
     }
 
