@@ -60,17 +60,37 @@ namespace csharpsnipcode
                     counter++;
                     Thread.Sleep(1000);
 
-                    
+
                 }
 
             }).Start();
 
             //------
 
-            new Thread(()=>{
+            MemoryMessageBuss.Instance.Set("TestSlideExpire", DateTime.Now.ToString(), new TimeSpan(0, 0, 3));
+
+            new Thread(() =>
+            {
+                Console.WriteLine("Before 3 seconds TestSlideExpire: " + MemoryMessageBuss.Instance.Get<string>("TestSlideExpire"));
+
                 Thread.Sleep(5000);
+
+                Console.WriteLine("After 5 seconds TestSlideExpire: " + MemoryMessageBuss.Instance.Get<string>("TestSlideExpire"));
+
                 Console.WriteLine("Un subscribe channel1 by subscriber2");
                 MemoryMessageBuss.Instance.Unsubscribe("channel1", "subscriber2");
+            }).Start();
+
+
+            MemoryMessageBuss.Instance.Set("TestSlideExpire3Seconds", DateTime.Now.ToString(), new TimeSpan(0, 0, 3));
+
+            new Thread(() =>
+            {
+                while (true)
+                {
+                    Console.WriteLine("After 1 seconds TestSlideExpire3Seconds: " + MemoryMessageBuss.Instance.Get<string>("TestSlideExpire3Seconds"));
+                    Thread.Sleep(1000);
+                }
             }).Start();
 
             Console.ReadLine();

@@ -29,6 +29,7 @@ namespace csharpsnipcode
         = new ConcurrentDictionary<string, ConcurrentDictionary<string, Action<object>>>();
         ConcurrentDictionary<string, bool> _channelTypeIsQueue = new ConcurrentDictionary<string, bool>();
         ConcurrentDictionary<string, DateTime?> _keyExpire = new ConcurrentDictionary<string, DateTime?>();
+        ConcurrentDictionary<string, KeyValuePair<DateTime, TimeSpan?>> _keySlideExpire = new ConcurrentDictionary<string, KeyValuePair<DateTime, TimeSpan?>>();
 
         Thread _channelThread;
         private MemoryMessageBuss()
@@ -102,6 +103,8 @@ namespace csharpsnipcode
                                 _channelTypeIsQueue.TryRemove(channelName, out bool oldTypeVal);
 
                                 _keyExpire.TryRemove(channelName, out DateTime? oldExpired);
+
+                                _keySlideExpire.TryRemove(channelName, out KeyValuePair<DateTime, TimeSpan?> oldSlideExpired);
                             }
 
                         });
@@ -126,8 +129,25 @@ namespace csharpsnipcode
             SetExpire(key, expireAt);
         }
 
+        public void Set<T>(string key, T data, TimeSpan? slideInterval = null)
+        {
+            _cache[key] = data;
+            SetExpire(key, slideInterval);
+        }
+
         public T Get<T>(string key)
         {
+            if (_keySlideExpire.ContainsKey(key))
+            {
+                var slideInterval = _keySlideExpire[key].Value;
+                if (slideInterval != null)
+                {
+                    var expireAt = DateTime.Now.Add(slideInterval.Value);
+                    SetExpire(key, expireAt);
+
+                    _keySlideExpire[key] = new KeyValuePair<DateTime, TimeSpan?>(expireAt, slideInterval);
+                }
+            }
             return _cache.TryGetValue(key, out object val) && val != null ? (T)val : default(T);
         }
 
@@ -136,11 +156,26 @@ namespace csharpsnipcode
             if (expireAt == null)
             {
                 _keyExpire.TryRemove(key, out expireAt);
+
+                _keySlideExpire.TryRemove(key, out KeyValuePair<DateTime, TimeSpan?> oldSlideExpired);
             }
             else
             {
                 _keyExpire[key] = expireAt;
             }
+        }
+
+        public void SetExpire(string key, TimeSpan? slideInterval = null)
+        {
+            DateTime? expireAt = null;
+            if (slideInterval != null)
+            {
+                expireAt = DateTime.Now.Add(slideInterval.Value);
+
+                _keySlideExpire[key] = new KeyValuePair<DateTime, TimeSpan?>(expireAt.Value, slideInterval);
+            }
+
+            SetExpire(key, expireAt);
         }
 
         public void Enqueue<T>(string queueName, T data, DateTime? expireAt = null)
