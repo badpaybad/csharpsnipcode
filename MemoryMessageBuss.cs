@@ -31,6 +31,8 @@ namespace csharpsnipcode
         ConcurrentDictionary<string, DateTime?> _keyExpire = new ConcurrentDictionary<string, DateTime?>();
         ConcurrentDictionary<string, KeyValuePair<DateTime, TimeSpan?>> _keySlideExpire = new ConcurrentDictionary<string, KeyValuePair<DateTime, TimeSpan?>>();
 
+        ConcurrentDictionary<string, ConcurrentDictionary<string, object>> _hashSet = new ConcurrentDictionary<string, ConcurrentDictionary<string, object>>();
+
         Thread _channelThread;
         private MemoryMessageBuss()
         {
@@ -113,26 +115,64 @@ namespace csharpsnipcode
             _channelThread.Start();
         }
 
-        public void Set<T>(string key, T data, DateTime? expireAt = null)
+        public void CacheSet<T>(string key, T data, DateTime? expireAt = null)
         {
             _cache[key] = data;
             SetExpire(key, expireAt);
         }
 
-        public void Set<T>(string key, T data, TimeSpan? slideInterval = null)
+        public void CacheSetUseSlideExpire<T>(string key, T data, TimeSpan? slideInterval = null)
         {
             _cache[key] = data;
-            SetExpire(key, slideInterval);
+            SetExpireUseSlide(key, slideInterval);
         }
 
-        public T Get<T>(string key)
+        public T CacheGet<T>(string key)
         {
             if (_keySlideExpire.ContainsKey(key))
             {
                 var slideInterval = _keySlideExpire[key].Value;
-                SetExpire(key, slideInterval);
+                SetExpireUseSlide(key, slideInterval);
             }
             return _cache.TryGetValue(key, out object val) && val != null ? (T)val : default(T);
+        }
+
+        public void HashSet<T>(string key, string field, T data, DateTime? expireAt = null)
+        {
+            if (!_hashSet.TryGetValue(key, out ConcurrentDictionary<string, object> fields))
+            {
+                _hashSet[key] = new ConcurrentDictionary<string, object>();
+            }
+            _hashSet[key][field] = data;
+
+            SetExpire(key, expireAt);
+        }
+        public void HashSetUseSlideExpire<T>(string key, string field, T data, TimeSpan? slideInterval = null)
+        {
+            if (!_hashSet.TryGetValue(key, out ConcurrentDictionary<string, object> fields))
+            {
+                _hashSet[key] = new ConcurrentDictionary<string, object>();
+            }
+            _hashSet[key][field] = data;
+            SetExpireUseSlide(key, slideInterval);
+        }
+        public T HashGet<T>(string key, string field)
+        {
+            if (_keySlideExpire.ContainsKey(key))
+            {
+                var slideInterval = _keySlideExpire[key].Value;
+                SetExpireUseSlide(key, slideInterval);
+            }
+
+            _hashSet.TryGetValue(key, out ConcurrentDictionary<string, object> filedData);
+
+            return filedData.TryGetValue(field, out object data) && data != null ? (T)data : default(T);
+        }
+
+        public ConcurrentDictionary<string, object> HashGetAll(string key)
+        {
+            _hashSet.TryGetValue(key, out ConcurrentDictionary<string, object> val);
+            return val;
         }
 
         public void SetExpire(string key, DateTime? expireAt = null)
@@ -149,7 +189,7 @@ namespace csharpsnipcode
             }
         }
 
-        public void SetExpire(string key, TimeSpan? slideInterval = null)
+        public void SetExpireUseSlide(string key, TimeSpan? slideInterval = null)
         {
             DateTime? expireAt = null;
             if (slideInterval != null)
@@ -321,6 +361,8 @@ namespace csharpsnipcode
 
             _keyExpire.TryRemove(key, out DateTime? oldExpired);
             _keySlideExpire.TryRemove(key, out KeyValuePair<DateTime, TimeSpan?> oldSlideExpired);
+
+            _hashSet.TryRemove(key, out ConcurrentDictionary<string, object> oldHashset);
         }
 
         public List<string> ListAllKey()
@@ -355,7 +397,10 @@ namespace csharpsnipcode
             {
                 keys.AddRange(_cache.Select(i => i.Key).ToList());
             }
-
+            lock (_hashSet)
+            {
+                keys.AddRange(_hashSet.Select(i => i.Key).ToList());
+            }
             keys = keys.Distinct().ToList();
 
             return keys;
