@@ -25,7 +25,7 @@ namespace csharpsnipcode
                           }
                       }).Start();
 
-            MemoryMessageBuss.Instance.Subscribe<string>("channel1", "subscriber2", (id) =>
+                    MemoryMessageBuss.Instance.Subscribe<string>("channel1", "subscriber2", (id) =>
                       {
                           Console.WriteLine("channel1 subscriber2: " + id);
                       });
