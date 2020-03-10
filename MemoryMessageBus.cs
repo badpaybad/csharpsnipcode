@@ -6,15 +6,15 @@ using System.Text;
 using System.Threading;
 namespace csharpsnipcode
 {
-    public class MemoryMessageBuss
+    public class MemoryMessageBus
     {
-        static MemoryMessageBuss _instance;
-        public static MemoryMessageBuss Instance
+        static MemoryMessageBus _instance;
+        public static MemoryMessageBus Instance
         {
             get
             {
                 if (_instance != null) return _instance;
-                _instance = new MemoryMessageBuss();
+                _instance = new MemoryMessageBus();
                 return _instance;
             }
         }
@@ -34,7 +34,7 @@ namespace csharpsnipcode
         ConcurrentDictionary<string, ConcurrentDictionary<string, object>> _hashSet = new ConcurrentDictionary<string, ConcurrentDictionary<string, object>>();
 
         Thread _channelThread;
-        private MemoryMessageBuss()
+        private MemoryMessageBus()
         {
             _channelThread = new Thread(() =>
             {
@@ -215,7 +215,7 @@ namespace csharpsnipcode
             SetExpire(queueName, expireAt);
         }
 
-        public object Dequeue(string queueName)
+        object Dequeue(string queueName)
         {
             if (_queue.TryGetValue(queueName, out ConcurrentQueue<object> queueData) && queueData != null)
             {
