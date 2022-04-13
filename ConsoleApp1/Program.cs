@@ -25,7 +25,7 @@ foreach (var i in Enumerable.Range(0, 10000))
 }
 
 var res = await Task.WhenAll(tasks);
-
+//Console.WriteLine(string.Join(Environment.NewLine, res));
 
 Console.WriteLine("Total threads planing to run in ");
 Console.WriteLine(logs.DistinctBy(i => i.threadId).Count());
@@ -45,7 +45,6 @@ schedulePair.Complete();
 await schedulePair.Completion;
 
 Console.ReadLine();
-
 
 record Log(int threadId, string at, string msg, string type)
 {
