@@ -6,11 +6,11 @@ Console.WriteLine("Hello, World!");
 ConcurrentBag<Log> logs = new System.Collections.Concurrent.ConcurrentBag<Log>();
 
 async Task<string> DoSth(string name)
-{    var start = $"start {name} {Thread.CurrentThread.ManagedThreadId} {DateTime.Now.ToString("yyyyMMddHHmmss.fffff")}";
+{    var start = $"start {name}";
     logs.Add(new Log(Thread.CurrentThread.ManagedThreadId, DateTime.Now.ToString("yyyyMMddHHmmss.fffff"), start, "start"));
     await Task.Delay(1000);
-    var end = $"end {name} {Thread.CurrentThread.ManagedThreadId} {DateTime.Now.ToString("yyyyMMddHHmmss.fffff")}";
-    logs.Add(new Log(Thread.CurrentThread.ManagedThreadId, DateTime.Now.ToString("yyyyMMddHHmmss.fffff"), end, "end"));
+    var end = $"continual {name}";
+    logs.Add(new Log(Thread.CurrentThread.ManagedThreadId, DateTime.Now.ToString("yyyyMMddHHmmss.fffff"), end, "continual"));
     return $"[{start} , {end}]";
 }
 
@@ -31,13 +31,12 @@ Console.WriteLine("Total threads planing to run in ");
 Console.WriteLine(logs.DistinctBy(i => i.threadId).Count());
 
 Console.WriteLine("More than 2 threads start in the same time ");
-
 var r1 = logs.Where(i => i.type == "start").GroupBy(i => i.at, (k, v) => new { at = k, count = v.Count() })
     .Where(i=>i.count>2).ToList();
 Console.WriteLine(r1.Count());
 
 Console.WriteLine("More than 2 threads continual part start in the same time ");
-var r2 = logs.Where(i => i.type == "end").GroupBy(i => i.at, (k, v) => new { at = k, count = v.Count() })
+var r2 = logs.Where(i => i.type == "continual").GroupBy(i => i.at, (k, v) => new { at = k, count = v.Count() })
     .Where(i => i.count > 2).ToList();
 Console.WriteLine(r2.Count());
 
