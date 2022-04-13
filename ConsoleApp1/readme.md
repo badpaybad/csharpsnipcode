@@ -1,5 +1,5 @@
 ﻿# ConcurrentExclusiveSchedulerPair
-test if allow run conccurent task with maxLevel set. c# 9.0,  dotnet 6.0
+test if allow run conccurent task with maxLevel set. c# 9.0,  dotnet 6.0, visual studio 2022
 
 				
 				string formatDate = "yyyyMMddHHmmss.fffff";
