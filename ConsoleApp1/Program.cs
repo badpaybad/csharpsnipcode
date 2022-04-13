@@ -29,13 +29,13 @@ var r2 = logs.Where(i => i.type == "continual").GroupBy(i => i.at, (k, v) => new
     .Where(i => i.count > maxLevel).ToList();
 Console.WriteLine(r2.Count());
 
-Console.WriteLine("Total threads planing to run in ");
-Console.WriteLine(logs.DistinctBy(i => i.threadId).Count());
-
 Console.WriteLine($"More than {maxLevel} threads start in the same time ");
 var r1 = logs.Where(i => i.type == "start").GroupBy(i => i.at, (k, v) => new { at = k, count = v.Count() })
     .Where(i => i.count > maxLevel).ToList();
 Console.WriteLine(r1.Count());
+
+Console.WriteLine("Total threads planing to run in ");
+Console.WriteLine(logs.DistinctBy(i => i.threadId).Count());
 
 schedulePair.Complete();
 
