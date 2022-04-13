@@ -4,41 +4,38 @@ using System.Collections.Concurrent;
 Console.WriteLine("Hello, World!");
 
 ConcurrentBag<Log> logs = new System.Collections.Concurrent.ConcurrentBag<Log>();
-
+var maxLevel = 4;
+string formatDate = "yyyyMMddHHmmss.fffff";
 async Task<string> DoSth(string name)
-{    var start = $"start {name}";
-    logs.Add(new Log(Thread.CurrentThread.ManagedThreadId, DateTime.Now.ToString("yyyyMMddHHmmss.fffff"), start, "start"));
+{
+    var start = $"start {name}";
+    logs.Add(new Log(Thread.CurrentThread.ManagedThreadId, DateTime.Now.ToString(formatDate), start, "start"));
     await Task.Delay(1000);
     var end = $"continual {name}";
-    logs.Add(new Log(Thread.CurrentThread.ManagedThreadId, DateTime.Now.ToString("yyyyMMddHHmmss.fffff"), end, "continual"));
+    logs.Add(new Log(Thread.CurrentThread.ManagedThreadId, DateTime.Now.ToString(formatDate), end, "continual"));
     return $"[{start} , {end}]";
 }
-
-var schedulePair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Current, 4);
-
+var schedulePair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Current, maxLevel);
 List<Task<string>> tasks = new List<Task<string>>();
-
 foreach (var i in Enumerable.Range(0, 10000))
 {
     tasks.Add(Task.Factory.StartNew<Task<string>>(async () => await DoSth($"job_{i}")
     , CancellationToken.None, TaskCreationOptions.None, schedulePair.ConcurrentScheduler).Unwrap());
 }
-
 var res = await Task.WhenAll(tasks);
 //Console.WriteLine(string.Join(Environment.NewLine, res));
+Console.WriteLine($"More than {maxLevel} threads continual part start in the same time ");
+var r2 = logs.Where(i => i.type == "continual").GroupBy(i => i.at, (k, v) => new { at = k, count = v.Count() })
+    .Where(i => i.count > maxLevel).ToList();
+Console.WriteLine(r2.Count());
 
 Console.WriteLine("Total threads planing to run in ");
 Console.WriteLine(logs.DistinctBy(i => i.threadId).Count());
 
-Console.WriteLine("More than 2 threads start in the same time ");
+Console.WriteLine($"More than {maxLevel} threads start in the same time ");
 var r1 = logs.Where(i => i.type == "start").GroupBy(i => i.at, (k, v) => new { at = k, count = v.Count() })
-    .Where(i=>i.count>2).ToList();
+    .Where(i => i.count > maxLevel).ToList();
 Console.WriteLine(r1.Count());
-
-Console.WriteLine("More than 2 threads continual part start in the same time ");
-var r2 = logs.Where(i => i.type == "continual").GroupBy(i => i.at, (k, v) => new { at = k, count = v.Count() })
-    .Where(i => i.count > 2).ToList();
-Console.WriteLine(r2.Count());
 
 schedulePair.Complete();
 
