@@ -18,7 +18,7 @@ var schedulePair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Current, 4
 
 List<Task<string>> tasks = new List<Task<string>>();
 
-foreach (var i in Enumerable.Range(0, 1000))
+foreach (var i in Enumerable.Range(0, 10000))
 {
     tasks.Add(Task.Factory.StartNew<Task<string>>(async () => await DoSth($"job_{i}")
     , CancellationToken.None, TaskCreationOptions.None, schedulePair.ConcurrentScheduler).Unwrap());
@@ -36,7 +36,7 @@ var r1 = logs.Where(i => i.type == "start").GroupBy(i => i.at, (k, v) => new { a
     .Where(i=>i.count>2).ToList();
 Console.WriteLine(r1.Count());
 
-Console.WriteLine("More than 2 threads end in the same time ");
+Console.WriteLine("More than 2 threads continual part start in the same time ");
 var r2 = logs.Where(i => i.type == "end").GroupBy(i => i.at, (k, v) => new { at = k, count = v.Count() })
     .Where(i => i.count > 2).ToList();
 Console.WriteLine(r2.Count());
