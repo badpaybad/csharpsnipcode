@@ -13,7 +13,7 @@ async Task<string> DoSth(string name)
     await Task.Delay(1000);
     var end = $"continual {name}";
     logs.Add(new Log(Thread.CurrentThread.ManagedThreadId, DateTime.Now.ToString(formatDate), end, "continual"));
-    Thread.Sleep(1000);    
+    Thread.Sleep(1000);    // simulate run sync in continual part
     //await Task.Delay(1000);
     return $"[{start} , {end} , {DateTime.Now.ToString(formatDate)}]";
 }
