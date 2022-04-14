@@ -28,7 +28,7 @@ foreach (var i in Enumerable.Range(0, taskTodo))
 }
 var res = await Task.WhenAll(tasks);
 DateTime tend = DateTime.Now;
-Console.WriteLine( $"Expected {taskTodo/ maxLevel} milisec, actual {(tend - tstart).TotalMilliseconds}");
+Console.WriteLine( $"Expected {taskTodo/ maxLevel} seconds (cause we use: Thread.Sleep(1000); ), actual {(tend - tstart).TotalMilliseconds} miliseconds");
 //Console.WriteLine(string.Join(Environment.NewLine, res));
 Console.WriteLine($"More than {maxLevel} threads continual part start in the same time ");
 var r2 = logs.Where(i => i.type == "continual").GroupBy(i => i.at, (k, v) => new { at = k, count = v.Count() })
