@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 Console.WriteLine("Hello, World!");
 
 ConcurrentBag<Log> logs = new System.Collections.Concurrent.ConcurrentBag<Log>();
-var maxLevel = 4;
+var maxLevel = 2;
 string formatDate = "yyyyMMddHHmmss.fff";
 async Task<string> DoSth(string name)
 {
@@ -14,16 +14,21 @@ async Task<string> DoSth(string name)
     var end = $"continual {name}";
     logs.Add(new Log(Thread.CurrentThread.ManagedThreadId, DateTime.Now.ToString(formatDate), end, "continual"));
     Thread.Sleep(1000);    
+    //await Task.Delay(1000);
     return $"[{start} , {end} , {DateTime.Now.ToString(formatDate)}]";
 }
 var schedulePair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Current, maxLevel);
 List<Task<string>> tasks = new List<Task<string>>();
-foreach (var i in Enumerable.Range(0, 100))
+DateTime tstart = DateTime.Now;
+int taskTodo = 20;
+foreach (var i in Enumerable.Range(0, taskTodo))
 {
     tasks.Add(Task.Factory.StartNew<Task<string>>(async () => await DoSth($"job_{i}")
     , CancellationToken.None, TaskCreationOptions.None, schedulePair.ConcurrentScheduler).Unwrap());
 }
 var res = await Task.WhenAll(tasks);
+DateTime tend = DateTime.Now;
+Console.WriteLine( $"Expected {taskTodo/ maxLevel} milisec, actual {(tend - tstart).TotalMilliseconds}");
 //Console.WriteLine(string.Join(Environment.NewLine, res));
 Console.WriteLine($"More than {maxLevel} threads continual part start in the same time ");
 var r2 = logs.Where(i => i.type == "continual").GroupBy(i => i.at, (k, v) => new { at = k, count = v.Count() })
