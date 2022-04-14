@@ -5,7 +5,7 @@ Console.WriteLine("Hello, World!");
 
 ConcurrentBag<Log> logs = new System.Collections.Concurrent.ConcurrentBag<Log>();
 var maxLevel = 4;
-string formatDate = "yyyyMMddHHmmss.fffff";
+string formatDate = "yyyyMMddHHmmss.fff";
 async Task<string> DoSth(string name)
 {
     var start = $"start {name}";
@@ -13,11 +13,12 @@ async Task<string> DoSth(string name)
     await Task.Delay(1000);
     var end = $"continual {name}";
     logs.Add(new Log(Thread.CurrentThread.ManagedThreadId, DateTime.Now.ToString(formatDate), end, "continual"));
-    return $"[{start} , {end}]";
+    Thread.Sleep(1000);    
+    return $"[{start} , {end} , {DateTime.Now.ToString(formatDate)}]";
 }
 var schedulePair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Current, maxLevel);
 List<Task<string>> tasks = new List<Task<string>>();
-foreach (var i in Enumerable.Range(0, 10000))
+foreach (var i in Enumerable.Range(0, 100))
 {
     tasks.Add(Task.Factory.StartNew<Task<string>>(async () => await DoSth($"job_{i}")
     , CancellationToken.None, TaskCreationOptions.None, schedulePair.ConcurrentScheduler).Unwrap());
