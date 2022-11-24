@@ -4,4 +4,12 @@
         "titleBar.activeBackground": "#0D436A",
         "titleBar.activeForeground": "#F6FAFE"
     }
+    ,
+
+"editor.acceptSuggestionOnCommitCharacter": true,
+"editor.acceptSuggestionOnEnter": "on",
+"editor.suggestOnTriggerCharacters": true,
+"editor.suggest.localityBonus": true,
+"editor.wordBasedSuggestions": true,
+"editor.parameterHints.enabled": true,
 }

@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/csharpsnipcode.csproj",
+                "${workspaceFolder}/testvalidationanotation/testvalidationanotation.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/csharpsnipcode.csproj",
+                "${workspaceFolder}/testvalidationanotation/testvalidationanotation.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -32,9 +32,8 @@
             "args": [
                 "watch",
                 "run",
-                "${workspaceFolder}/csharpsnipcode.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "--project",
+                "${workspaceFolder}/testvalidationanotation/testvalidationanotation.csproj"
             ],
             "problemMatcher": "$msCompile"
         }
