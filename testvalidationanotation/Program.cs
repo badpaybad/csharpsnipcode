@@ -11,22 +11,16 @@ builder.Services.AddControllers()
 {
     options.InvalidModelStateResponseFactory = context =>
     {
-        Dictionary<string, List<string>> errors = new Dictionary<string, List<string>>();
-        foreach (var pair in context.ModelState)
-        {
-            if (pair.Value.Errors.Count > 0)
-            {
-                errors[pair.Key.Replace("]", "").Replace("[", ".")] = pair.Value.Errors.Select(error => error.ErrorMessage).ToList();
-            }
-        }
-
         var result = new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new
         {
             type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
             title = "One or more validation errors occurred.",
             status = 400,
             traceId = context.HttpContext.TraceIdentifier,
-            errors = errors
+            //errors = errors
+            errors = context.ModelState.ToDictionary(
+                k => k.Key.Replace("]", "").Replace("[", "."),
+                v => v.Value.Errors.Select(error => error.ErrorMessage).ToList())
         });
 
         return result;

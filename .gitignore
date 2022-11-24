@@ -2,12 +2,12 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs
+**/.vs
 /Liberty.SnipCode/.vs/Liberty.SnipCode/v16
 /Liberty.SnipCode/bin/Debug/netcoreapp2.1
 /Liberty.SnipCode/obj
-/bin
-/obj
+**/bin
+**/obj
 /ConsoleApp1/bin/Debug/net6.0
 /ConsoleApp1/obj
 /ConsoleApp1/.vs/ConsoleApp1
